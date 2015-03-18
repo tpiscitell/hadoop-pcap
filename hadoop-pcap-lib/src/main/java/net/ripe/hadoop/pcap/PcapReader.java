@@ -60,18 +60,18 @@ public class PcapReader implements Iterable<Packet> {
 	public static final String PROTOCOL_TCP = "TCP";
 	public static final String PROTOCOL_UDP = "UDP";
 
-	private final DataInputStream is;
-	private Iterator<Packet> iterator;
-	private LinkType linkType;
-	private long snapLen;
-	private boolean caughtEOF = false;
+	protected final DataInputStream is;
+	protected Iterator<Packet> iterator;
+	protected LinkType linkType;
+	protected long snapLen;
+	protected boolean caughtEOF = false;
     // MathContext for BigDecimal to preserve only 16 decimal digits
-    private MathContext ts_mc = new MathContext(16);
+    protected MathContext ts_mc = new MathContext(16);
 	
 	//To read reversed-endian PCAPs; the header is the only part that switches
-	private boolean reverseHeaderByteOrder = false;
+	protected boolean reverseHeaderByteOrder = false;
 
-	private Multimap<Flow, SequencePayload> flows = TreeMultimap.create();
+	protected Multimap<Flow, SequencePayload> flows = TreeMultimap.create();
 
 	public byte[] pcapHeader;
 	public byte[] pcapPacketHeader;
@@ -111,7 +111,7 @@ public class PcapReader implements Iterable<Packet> {
 		linkType = lt;
 	}
 
-	private int getUdpChecksum(byte[] packetData, int ipStart, int ipHeaderLen) {
+	protected int getUdpChecksum(byte[] packetData, int ipStart, int ipHeaderLen) {
 		/*
 		 * No Checksum on this packet?
 		 */
@@ -142,12 +142,12 @@ public class PcapReader implements Iterable<Packet> {
 		return (~sum) & 0xffff;
 	}
 
-	private int getUdpLength(byte[] packetData, int ipStart, int ipHeaderLen) {
+	protected int getUdpLength(byte[] packetData, int ipStart, int ipHeaderLen) {
 		int udpLen = PcapReaderUtil.convertShort(packetData, ipStart + ipHeaderLen + 4);
 		return udpLen;
 	}
 
-	private Packet nextPacket() {
+	protected Packet nextPacket() {
 		pcapPacketHeader = new byte[PACKET_HEADER_SIZE];
 		if (!readBytes(pcapPacketHeader))
 			return null;
@@ -304,7 +304,7 @@ public class PcapReader implements Iterable<Packet> {
 		return -1;
 	}
 
-	private int getInternetProtocolHeaderLength(byte[] packet, int ipProtocolHeaderVersion, int ipStart) {
+	protected int getInternetProtocolHeaderLength(byte[] packet, int ipProtocolHeaderVersion, int ipStart) {
 		if (ipProtocolHeaderVersion == 4)
 			return (packet[ipStart + IP_VHL_OFFSET] & 0xF) * 4;
 		else if (ipProtocolHeaderVersion == 6)
@@ -312,16 +312,16 @@ public class PcapReader implements Iterable<Packet> {
 		return -1;
 	}
 
-	private int getInternetProtocolHeaderVersion(byte[] packet, int ipStart) {
+	protected int getInternetProtocolHeaderVersion(byte[] packet, int ipStart) {
 		return (packet[ipStart + IP_VHL_OFFSET] >> 4) & 0xF;
 	}
 
-	private int getTcpHeaderLength(byte[] packet, int tcpStart) {
+	protected int getTcpHeaderLength(byte[] packet, int tcpStart) {
 		int dataOffset = tcpStart + TCP_HEADER_DATA_OFFSET;
 		return ((packet[dataOffset] >> 4) & 0xF) * 4;
 	}
 
-	private void buildInternetProtocolV4Packet(Packet packet, byte[] packetData, int ipStart) {
+	protected void buildInternetProtocolV4Packet(Packet packet, byte[] packetData, int ipStart) {
 		int ttl = packetData[ipStart + IP_TTL_OFFSET] & 0xFF;
 		packet.put(Packet.TTL, ttl);
 
@@ -335,7 +335,7 @@ public class PcapReader implements Iterable<Packet> {
 		packet.put(Packet.DST, dst);
 	}
 
-	private void buildInternetProtocolV6Packet(Packet packet, byte[] packetData, int ipStart) {
+	protected void buildInternetProtocolV6Packet(Packet packet, byte[] packetData, int ipStart) {
 		int ttl = packetData[ipStart + IPV6_HOPLIMIT_OFFSET] & 0xFF;
 		packet.put(Packet.TTL, ttl);
 
@@ -353,7 +353,7 @@ public class PcapReader implements Iterable<Packet> {
 	 * packetData is the entire layer 2 packet read from pcap
 	 * ipStart is the start of the IP packet in packetData
 	 */
-	private byte[] buildTcpAndUdpPacket(Packet packet, byte[] packetData, int ipProtocolHeaderVersion, int ipStart, int ipHeaderLen, int totalLength) {
+	protected byte[] buildTcpAndUdpPacket(Packet packet, byte[] packetData, int ipProtocolHeaderVersion, int ipStart, int ipHeaderLen, int totalLength) {
 		packet.put(Packet.SRC_PORT, PcapReaderUtil.convertShort(packetData, ipStart + ipHeaderLen + PROTOCOL_HEADER_SRC_PORT_OFFSET));
 		packet.put(Packet.DST_PORT, PcapReaderUtil.convertShort(packetData, ipStart + ipHeaderLen + PROTOCOL_HEADER_DST_PORT_OFFSET));
 
@@ -450,7 +450,7 @@ public class PcapReader implements Iterable<Packet> {
 		return iterator;
 	}
 
-	private class PacketIterator implements Iterator<Packet> {
+	protected class PacketIterator implements Iterator<Packet> {
 		private Packet next;
 
 		private void fetchNext() {
@@ -485,7 +485,7 @@ public class PcapReader implements Iterable<Packet> {
 		}
 	}
 
-	private class SequencePayload implements Comparable<SequencePayload> {
+	protected class SequencePayload implements Comparable<SequencePayload> {
 		private Long seq;
 		private byte[] payload;
 
